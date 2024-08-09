@@ -76,10 +76,20 @@ function playTrack() {
     function drawEqualizer() {
       analyzer.getByteFrequencyData(frequencyData);
       equalizerContext.clearRect(0, 0, 100, 100);
-      for (let i = 0; i < 10; i++) {
-        const barHeight = Math.floor(frequencyData[i * 25] / 255 * 100);
+      const numBars = 10;
+      const barWidth = 100 / numBars;
+      const numBinsPerBar = Math.floor(analyzer.frequencyBinCount / numBars);
+      for (let i = 0; i < numBars; i++) {
+        const startBin = Math.floor(i * numBinsPerBar);
+        const endBin = Math.min(startBin + numBinsPerBar, analyzer.frequencyBinCount);
+        let sum = 0;
+        for (let j = startBin; j < endBin; j++) {
+          sum += frequencyData[j];
+        }
+        const average = sum / (endBin - startBin);
+        const barHeight = Math.floor(average / 255 * 100);
         equalizerContext.fillStyle = `hsl(${i * 20}, 100%, 50%)`;
-        equalizerContext.fillRect(i * 10, 100 - barHeight, 10, barHeight);
+        equalizerContext.fillRect(i * barWidth, 100 - barHeight, barWidth, barHeight);
       }
       requestAnimationFrame(drawEqualizer);
     }
