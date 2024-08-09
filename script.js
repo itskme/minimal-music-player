@@ -5,7 +5,6 @@ const nextButton = document.querySelector('#next-button');
 const prevButton = document.querySelector('#prev-button');
 const folderInput = document.querySelector('#folder-input');
 const loadButton = document.querySelector('#load-button');
-
 let currentTrack = 0;
 let tracks = [];
 let player = new Audio();
@@ -41,10 +40,22 @@ prevButton.addEventListener('click', () => {
 });
 
 function playTrack() {
-  if (tracks.length === 0) return;
+  if (tracks.length > 0) {
+    player.src = URL.createObjectURL(tracks[currentTrack]);
+    player.play();
+    trackTitle.textContent = tracks[currentTrack].name;
 
-  const currentFile = tracks[currentTrack];
-  player.src = URL.createObjectURL(currentFile);
-  player.play();
-  playPauseButton.textContent = 'Pause';
+    // Use jsmediatags to extract the metadata
+    jsmediatags.read(tracks[currentTrack], {
+      onSuccess: (tag) => {
+        trackArtist.textContent = tag.tags.artist || "Unknown Artist";
+      },
+      onError: (error) => {
+        console.error(error);
+        trackArtist.textContent = "Unknown Artist";
+      }
+    });
+
+    playPauseButton.textContent = 'Pause';
+  }
 }
