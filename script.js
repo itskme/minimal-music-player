@@ -8,6 +8,7 @@ const loadButton = document.querySelector('#load-button');
 
 let currentTrack = 0;
 let tracks = [];
+let player = new Audio();
 
 loadButton.addEventListener('click', () => {
   folderInput.click();
@@ -34,3 +35,16 @@ nextButton.addEventListener('click', () => {
   playTrack();
 });
 
+prevButton.addEventListener('click', () => {
+  currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
+  playTrack();
+});
+
+function playTrack() {
+  if (tracks.length === 0) return;
+
+  const currentFile = tracks[currentTrack];
+  player.src = URL.createObjectURL(currentFile);
+  player.play();
+  playPauseButton.textContent = 'Pause';
+}
