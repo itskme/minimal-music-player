@@ -1,6 +1,6 @@
 const trackTitle = document.querySelector('#track-title');
 const trackArtist = document.querySelector('#track-artist');
-const coverArt = document.querySelector('#cover-art');
+const equalizerCanvas = document.querySelector('#equalizer-canvas');
 const playPauseButton = document.querySelector('#play-pause-button');
 const nextButton = document.querySelector('#next-button');
 const prevButton = document.querySelector('#prev-button');
@@ -9,6 +9,9 @@ const loadButton = document.querySelector('#load-button');
 let currentTrack = 0;
 let tracks = [];
 let player = new Audio();
+let equalizerContext;
+let audioContext;
+let analyzer;
 
 loadButton.addEventListener('click', () => {
   folderInput.click();
@@ -46,26 +49,44 @@ function playTrack() {
     player.play();
     trackTitle.textContent = tracks[currentTrack].name;
 
-    // Use jsmediatags to extract the metadata, try base64 for the image, it is not working rn
+    // Use jsmediatags to extract the metadata
     jsmediatags.read(tracks[currentTrack], {
       onSuccess: (tag) => {
-        trackArtist.textContent = tag.tags.artist || "Unknown Artist";
-        if (tag.tags.picture) {
-          const coverArtImage = new Image();
-          coverArtImage.src = `data:image/jpeg;base64,${tag.tags.picture.data}`;
-          coverArt.innerHTML = '';
-          coverArt.appendChild(coverArtImage);
-        } else {
-          coverArt.innerHTML = '';
-        }
+        const artist = tag.tags.artist || "Unknown Artist";
+        trackArtist.textContent = artist;
       },
       onError: (error) => {
         console.error(error);
         trackArtist.textContent = "Unknown Artist";
-        coverArt.innerHTML = '';
       }
     });
 
     playPauseButton.textContent = 'Pause';
+
+    // Create an audio context and analyzer
+    audioContext = new AudioContext();
+    const source = audioContext.createMediaElementSource(player);
+    analyzer = audioContext.createAnalyser();
+    source.connect(analyzer);
+    analyzer.connect(audioContext.destination);
+    analyzer.fftSize = 256;
+    const frequencyData = new Uint8Array(analyzer.frequencyBinCount);
+
+    // Draw the equalizer
+    function drawEqualizer() {
+      analyzer.getByteFrequencyData(frequencyData);
+      equalizerContext.clearRect(0, 0, 100, 100);
+      for (let i = 0; i < 10; i++) {
+        const barHeight = Math.floor(frequencyData[i * 25] / 255 * 100);
+        equalizerContext.fillStyle = `hsl(${i * 20}, 100%, 50%)`;
+        equalizerContext.fillRect(i * 10, 100 - barHeight, 10, barHeight);
+      }
+      requestAnimationFrame(drawEqualizer);
+    }
+    drawEqualizer();
   }
 }
+
+equalizerCanvas.width = 100;
+equalizerCanvas.height = 100;
+equalizerContext = equalizerCanvas.getContext('2d');
